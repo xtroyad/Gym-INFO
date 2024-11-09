@@ -32,25 +32,48 @@ const options = computed(()=>{
 })
 const reps = ref([false, false, false, false])
 
-
-
-
-
-
 let TESTER: HTMLElement | null = null
 
+const loadCsv = async () => {
+  try {
+    const response = await fetch('/src/temp/myEntre.csv');
+    if (!response.ok) {
+      throw new Error('Error al cargar el archivo CSV');
+    }
+
+    const csvText: string = await response.text();
+
+    const rows: string[] | string[][] = csvText.split('\n').map(row => row.split(';'));
+    //const headers: string[] = rows[0];
+    let dataRows: Array<Array<string>> = rows.slice(1);
+    console.log(dataRows)
+    dataRows = dataRows.filter(xrow =>xrow[1] === '1')
+    const xData: string[] = dataRows.map(row => row[14]); 
+    const yData: number[] = dataRows.map(row => parseFloat(row[3])); 
+
+    plotData(xData, yData);
+  } catch (error) {
+    console.error('Error:', error);
+  }
+};
+
+const plotData = (x: string[], y: number[]) => {
+  TESTER = document.getElementById('tester') || new HTMLElement()
+  Plotly.newPlot( 
+    TESTER, 
+    [{
+      x: x,
+      y: y 
+    }], 
+    {margin: { t: 0 } } 
+  );
+};
+
 onMounted(()=>{
-TESTER = document.getElementById('tester') || new HTMLElement()
-
-Plotly.newPlot( TESTER, [
-  {
-    x: [1, 2, 3, 4, 5],
-    y: [1, 2, 4, 8, 16] 
-  }], 
-  {
-    margin: { t: 0 } } );
-
+  loadCsv()
 })
+
+
 </script>
 <style lang="css">
 #params{
