@@ -5,6 +5,9 @@
     "paths": {
     "plotly.js-basic-dist": [
       "node_modules/@types/plotly.js"
+    ],
+    "dataframe-js":[
+      "node_modules/@types/dataframe-js"
     ]
   }
   },
