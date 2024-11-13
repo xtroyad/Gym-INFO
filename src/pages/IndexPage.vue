@@ -4,13 +4,12 @@
       <q-select filled v-model="dayModel" :options="Array.from(map.keys())" label="Día" />
       <q-select filled v-model="exerModel" :options="options"  option-value="value"
       option-label="label" label="Ejercicio" />
-
-      <q-checkbox v-model="reps[0]" label="R1" color="teal" />
-      <q-checkbox v-model="reps[1]" label="R2" color="teal" />
-      <q-checkbox v-model="reps[2]" label="R3" color="teal" />
-      <q-checkbox v-model="reps[3]" label="R4" color="teal" />
     </div>
-    <div id="tester" style="width:70%;height:70%;"></div>
+    <div class="gra">
+      <div id="tester" style="width:70%; height:70%;"></div>
+      <formExerComponent :exercise_ID="exerModel.value"/>
+    </div>
+    
   </q-page>
 </template>
 
@@ -19,7 +18,7 @@ import Plotly from 'plotly.js-basic-dist';
 import { computed, onMounted, ref, watch } from 'vue';
 import DataFrame, { GroupedDataFrame } from 'dataframe-js';
 import Ejercicio from 'src/model/enums/EjercicioEnum';
-
+import formExerComponent from 'src/components/formExerComponent.vue';
 const dayModel = ref('LUNES')
 
 const map = new Map<string, Array<{ value: number, label: string }>>([
@@ -70,7 +69,6 @@ const options = computed(()=>{
   return map.get(dayModel.value) || [{ value: Ejercicio.PESO_M, label: Ejercicio[Ejercicio.PESO_M] }];
 })
 
-const reps = ref([false, false, false, false])
 
 let TESTER: HTMLElement | null = null
 
@@ -146,5 +144,10 @@ onMounted(()=>{
   background-color: rgb(132, 138, 138);
   width: 100%;
   display: flex; 
+}
+
+.gra{
+  display: flex; 
+  width: 100%;
 }
 </style>
