@@ -16,7 +16,7 @@
 
 <script setup lang="ts">
 import Plotly from 'plotly.js-basic-dist';
-import { computed, onMounted, ref } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 import DataFrame, { GroupedDataFrame } from 'dataframe-js';
 import Ejercicio from 'src/model/enums/EjercicioEnum';
 
@@ -63,57 +63,58 @@ const map = new Map<string, Array<{ value: number, label: string }>>([
   ]]
 ]);
 
-// const setExercise = {
-//   'LUNES': [1, 2, 3, 4],
-//   'MARTES': [5, 6, 7, 8, 9, 10],
-//   'MIERCOLES': [11, 12, 13 , 14, 15, 16],
-//   'JUEVES': [17, 18, 19, 20, 21, 22, 23],
-//   'VIERNES': [24, 25, 26, 27],
-// }
 
 const exerModel = ref({ value: Ejercicio.PESO_M, label: Ejercicio[Ejercicio.PESO_M] })
 
 const options = computed(()=>{
-  return map.get(dayModel.value);
+  return map.get(dayModel.value) || [{ value: Ejercicio.PESO_M, label: Ejercicio[Ejercicio.PESO_M] }];
 })
 
 const reps = ref([false, false, false, false])
 
 let TESTER: HTMLElement | null = null
 
+let dataframe = new DataFrame([])
 const loadCsv = async () => {
-  let response: DataFrame  = new DataFrame([])
   try {
-    response = await  DataFrame.fromCSV('src/temp/myEntre.csv')
+    dataframe = await  DataFrame.fromCSV('src/temp/myEntre.csv')
   } catch (error) {
     console.error('Error:', error);
   }
-  plotData(response);
-
+  updateGraph(exerModel.value.value.toString());
 };
 
-const plotData = (df: DataFrame) => {
+const updateGraph = (ex_ID: string) => {
+  const df: DataFrame = dataframe
   TESTER = document.getElementById('tester') || new HTMLElement();
-  console.log(df)
-  const ids : string[] = df.distinct('exercise_ID').toArray('exercise_ID')
-  console.log(ids)
 
   const new_df: GroupedDataFrame = df.groupBy('exercise_ID')
-  console.log(new_df.toCollection())
-  const trace = new_df.toCollection().map(group =>{
-    console.log(group)
-    const dataframe: DataFrame = group['group']
-    const id: string = group['groupKey']['exercise_ID']
-    console.log(id)
-    return {
-        x: dataframe.toArray('day').map(day => new Date(day)),
-        y: dataframe.toArray('weight1'),
-        mode: 'scatter',
-        name: `Exercise ${id}`,
-        width: 3
-      };
+
+  const groups = new_df.toCollection().filter(group => {
+    return group['groupKey']['exercise_ID'] === (ex_ID)
   })
 
+  const traces: object[] = []; 
+
+  groups.forEach(group => {
+  const dataframe: DataFrame = group['group'];
+  const id: string = group['groupKey']['exercise_ID'];
+
+  for (let i = 1; i <= 4; i++) {
+    const weightColumn = `weight${i}`; 
+    
+    
+    const trace = {
+      x: dataframe.toArray('day').map(day => new Date(day)),
+      y: dataframe.toArray(weightColumn),
+      mode: 'scatter',
+      name: `Exercise ${id} - ${weightColumn}`,
+      width: 3
+    };
+    
+    traces.push(trace);
+  }
+});
 
   const layout = {
     margin: { t: 0 },
@@ -122,8 +123,17 @@ const plotData = (df: DataFrame) => {
     yaxis: { title: 'Value' }
   };
 
-  Plotly.newPlot(TESTER, trace, layout);
-};
+  if (TESTER.hasChildNodes()) {
+      Plotly.react(TESTER, traces, layout); 
+    } else {
+      Plotly.newPlot(TESTER, traces, layout);
+    }
+  };
+
+watch(() => exerModel.value.value, (newValue) => {
+  console.log('exerModel.value.value ha cambiado a', newValue);
+  updateGraph(exerModel.value.value.toString());
+});
 
 onMounted(()=>{
   loadCsv()
